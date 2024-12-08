@@ -5,14 +5,18 @@ import dotenv from 'dotenv';
 import AuthRoute from './routes/Auth.route.js'; 
 import helmet from 'helmet'; 
 dotenv.config(); 
+import connectToMongodb from './helpers/init_mongodb.js';
 
 const app = express(); 
 
+const port = process.env.PORT || 3000; 
+
 // configs 
 app.use(helmet());  
-
 // Log http requests after security headers are set 
 app.use(morgan("dev")); 
+app.use(express.json()); 
+app.use(express.urlencoded({extended: true}))
 
 // auth routes 
 app.use("/auth", AuthRoute)
@@ -42,9 +46,10 @@ app.use((err, req, res, next) => {
 })
 
 
-const port = process.env.PORT || 3000; 
 
-// starting express applications
+// connecting to mongodb 
+connectToMongodb(); 
+
 app.listen(port, () => {
-    console.log(`server running on port ${port}`);
+    console.log(`App is running at port: ${port}`);
 })
