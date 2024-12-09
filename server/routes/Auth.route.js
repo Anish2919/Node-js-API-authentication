@@ -1,25 +1,29 @@
 import express from 'express'; 
-
 import createError from 'http-errors'; 
 import { User } from '../Models/User.model.js';
+// import { authSchema } from '../helpers/validate_schema.js';
+import { authSchema } from '../helpers/validate_schema.js';
+
 const router = express.Router(); 
 
 // REGISTER ROUTER 
 router.post("/register", async(req, res, next) => {
     try {
         const { email, password } = req.body; 
-        if(!email || !password) throw createError.BadRequest(); 
 
-        const doesExist = await User.findOne({email: email}); 
+        // validating input schema using Joi 
+        const sanitizedRequestBody = await authSchema.validateAsync(req.body);
 
-        if(doesExist) throw createError.Conflict("Email already exist"); 
+        const doesExist = await User.findOne({email: sanitizedRequestBody.email}); 
+        if(doesExist) throw createError.Conflict(`${email} is already been registered.`); 
 
         // creating user and saving in database 
-        const newUser = await User.create({email: email, password: password}); 
+        const newUser = await User.create({email: sanitizedRequestBody.email, password: password}); 
         if(newUser) {
             res.status(201).json({message: "User created successfully."}); 
         }
     } catch (error) {
+        if(error.isJoi === true) error.status = 422; 
         next(error); 
     }
 }); 
