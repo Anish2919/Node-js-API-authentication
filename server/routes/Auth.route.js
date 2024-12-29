@@ -3,8 +3,11 @@ import createError from 'http-errors';
 import { User } from '../Models/User.model.js';
 // import { authSchema } from '../helpers/validate_schema.js';
 import { authSchema } from '../helpers/validate_schema.js';
+import { signAccessToken } from '../helpers/jwt_helper.js';
 
 const router = express.Router(); 
+
+const salt = process.env.BCRYPT_SALT || 10; 
 
 // REGISTER ROUTER 
 router.post("/register", async(req, res, next) => {
@@ -18,10 +21,9 @@ router.post("/register", async(req, res, next) => {
         if(doesExist) throw createError.Conflict(`${email} is already been registered.`); 
 
         // creating user and saving in database 
-        const newUser = await User.create({email: sanitizedRequestBody.email, password: password}); 
-        if(newUser) {
-            res.status(201).json({message: "User created successfully."}); 
-        }
+        const newUser = await User.create({email: sanitizedRequestBody.email, password: password});
+        const accessToken = await signAccessToken({email: newUser.email, id: newUser._id}); 
+        res.send(accessToken); 
     } catch (error) {
         if(error.isJoi === true) error.status = 422; 
         next(error); 
@@ -30,11 +32,22 @@ router.post("/register", async(req, res, next) => {
 
 // LOGIN ROUTER 
 router.post("/login", async(req, res, next) => {
-    console.log(req.body); 
-    res.send("login router"); 
+    try {
+        const {email, password} = await authSchema.validateAsync(req.body); // validating or sanitizing password 
+        const user = await User.findOne({email: email}, 'email password -_id');  
+        if(!user) throw createError.BadRequest("Email not registered! Please register before loggin in."); 
+
+        const isMatch = await user.isValidPassword(password); 
+        if(!isMatch) throw createError.Unauthorized("Username/password not valid"); 
+
+        const accessToken = await signAccessToken({id: user._id, email: email}); 
+        res.status(200).json({message: "LoggedIn successfully", accessToken: accessToken});  
+    } catch (error) {
+        if(error.isJoi === true) return next(createError.BadRequest("Invalid username and password")); 
+        next(error); 
+    }
 }); 
 
-// mos update latest 
 
 // REFRESH TOKEN 
 router.post("/refresh-token", async(req, res, next) => {

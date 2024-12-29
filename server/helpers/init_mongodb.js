@@ -1,8 +1,9 @@
+import { configDotenv } from "dotenv";
 import mongoose from "mongoose"; 
+configDotenv();  
 
 const dbName = process.env.DB_NAME || 'JWT_AUTH'; 
 const dbUri = process.env.MONGOOSE_URL || 'mongodb://localhost:27017/jwt_auth'; 
-
 
 export default function connectToMongodb() {
      mongoose.connect(dbUri, {

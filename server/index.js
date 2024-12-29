@@ -1,10 +1,12 @@
+import dotenv from 'dotenv'; 
+dotenv.config(); 
+
+
 import express from 'express'; 
 import morgan from 'morgan';
-import createError from 'http-errors'; 
-import dotenv from 'dotenv'; 
 import AuthRoute from './routes/Auth.route.js'; 
+import createError from 'http-errors'; 
 import helmet from 'helmet'; 
-dotenv.config(); 
 import connectToMongodb from './helpers/init_mongodb.js';
 
 const app = express(); 
@@ -21,10 +23,6 @@ app.use(express.urlencoded({extended: true}))
 // auth routes 
 app.use("/auth", AuthRoute)
 
-// testing home route 
-app.get("/", async(req, res, next) => {
-    res.send("Hello response"); 
-}); 
 
 // error handler for not found page
 app.use(async (res, req, next) => {
@@ -33,13 +31,12 @@ app.use(async (res, req, next) => {
     next(createError.NotFound()); 
 })
 
-
 // global error handler 
 app.use((err, req, res, next) => {
     res.status(err.status || 500); 
     res.send({
         error: {
-            status: err.status || 500, 
+            status: err.status || 500,
             message: err.message 
         }
     })
