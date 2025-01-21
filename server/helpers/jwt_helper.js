@@ -9,8 +9,8 @@ const jwt_secret_key = process.env.JWT_SECRET_KEY;
 function signAccessToken(payload) {
     return new Promise((resolve, reject) => {
         jwt.sign(payload, jwt_secret_key,{
-            expiresIn: '1h',
-            issuer: "pickuppage.com"    
+            expiresIn: "1h",
+            issuer: "pickuppage.com"       
         }, (err, token) => {
             if(err) {
                 console.log(err.message); 
@@ -21,5 +21,22 @@ function signAccessToken(payload) {
     })
 }; 
 
+async function verifyAccessToken(req,res,next) {
+    try {
+        if(!req.headers['authorization']) {
+            throw new createHttpError.Unauthorized(); 
+        }
+        const bearerToken = req.headers['authorization'].split(' ')[1]; 
+        if(!bearerToken) throw new createHttpError.Unauthorized(); 
 
-export { signAccessToken }; 
+        const verifyToken = await jwt.verify(bearerToken, jwt_secret_key, (err, result) => {
+            if(err) throw createHttpError.Unauthorized(); 
+            req.payload = result; 
+            next(); 
+        })
+    } catch (error) {
+        next(error); 
+    }
+}
+
+export { signAccessToken, verifyAccessToken }; 

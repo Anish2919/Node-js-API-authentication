@@ -3,7 +3,7 @@ import createError from 'http-errors';
 import { User } from '../Models/User.model.js';
 // import { authSchema } from '../helpers/validate_schema.js';
 import { authSchema } from '../helpers/validate_schema.js';
-import { signAccessToken } from '../helpers/jwt_helper.js';
+import { signAccessToken, verifyAccessToken } from '../helpers/jwt_helper.js';
 
 const router = express.Router(); 
 
@@ -23,7 +23,8 @@ router.post("/register", async(req, res, next) => {
         // creating user and saving in database 
         const newUser = await User.create({email: sanitizedRequestBody.email, password: password});
         const accessToken = await signAccessToken({email: newUser.email, id: newUser._id}); 
-        res.send(accessToken); 
+        res.status(201).json({message:"User registered successfully", accessToken: accessToken}); 
+        // res.send(accessToken); 
     } catch (error) {
         if(error.isJoi === true) error.status = 422; 
         next(error); 
@@ -59,5 +60,13 @@ router.delete("/logout", async(req, res, next) => {
     res.send("logout router"); 
 }); 
 
+// testing authorize token 
+router.get('/authorize', verifyAccessToken, async(req, res, next) => {
+    try {
+        res.json(req?.payload? req.payload : {message: 'no payload'}); 
+    } catch (error) {
+        next(error)
+    }
+})
 
 export default router; 

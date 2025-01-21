@@ -31,6 +31,7 @@ app.use(async (res, req, next) => {
     next(createError.NotFound()); 
 })
 
+
 // global error handler 
 app.use((err, req, res, next) => {
     res.status(err.status || 500); 
