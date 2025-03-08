@@ -9,11 +9,10 @@ const jwt_secret_key = process.env.JWT_SECRET_KEY;
 function signAccessToken(payload) {
     return new Promise((resolve, reject) => {
         jwt.sign(payload, jwt_secret_key,{
-            expiresIn: "15s",
+            expiresIn: "1h",
             issuer: "pickuppage.com"       
         }, (err, token) => {
             if(err) {
-                console.log(err.message); 
                 reject(createHttpError.InternalServerError()); 
             }
             resolve(token); 
@@ -30,10 +29,12 @@ async function verifyAccessToken(req,res,next) {
         if(!bearerToken) throw new createHttpError.Unauthorized(); 
 
         const verifyToken = await jwt.verify(bearerToken, jwt_secret_key, (err, result) => {
-            if(err?.name==="JsonWebTokenError") {
-                throw new createHttpError.Unauthorized(); 
-            } else {
-                throw new createHttpError.Unauthorized(err.message); 
+            if(err) {
+                if(err.name==="JsonWebTokenError") {
+                    throw new createHttpError.Unauthorized(); 
+                } else { 
+                    throw new createHttpError.Unauthorized(err.message); 
+                }
             }
             req.payload = result; 
             next(); 
@@ -43,4 +44,18 @@ async function verifyAccessToken(req,res,next) {
     }
 }
 
-export { signAccessToken, verifyAccessToken }; 
+function signRefreshToken(payload) {
+    return new Promise((resolve, reject) => {
+        jwt.sign(payload, jwt_secret_key, {
+            expiresIn: "12h", 
+            issuer: "anish.com", 
+        }, (err, decodedResult) => {
+            if(err) {
+                reject(createHttpError.InternalServerError(err.message)); 
+            }
+            resolve(decodedResult); 
+        })
+    })
+}
+
+export { signAccessToken, verifyAccessToken, signRefreshToken }; 
