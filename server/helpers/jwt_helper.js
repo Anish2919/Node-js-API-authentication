@@ -2,14 +2,14 @@ import { configDotenv } from 'dotenv';
 import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken'; 
 configDotenv(); 
-const jwt_secret_key = process.env.JWT_SECRET_KEY; 
+const jwt_secret_key = process.env.JWT_SECRET_KEY;
 
 
 // generating access token using jwt-web-token 
 function signAccessToken(payload) {
     return new Promise((resolve, reject) => {
         jwt.sign(payload, jwt_secret_key,{
-            expiresIn: "1h",
+            expiresIn: "15s",
             issuer: "pickuppage.com"       
         }, (err, token) => {
             if(err) {
@@ -30,7 +30,11 @@ async function verifyAccessToken(req,res,next) {
         if(!bearerToken) throw new createHttpError.Unauthorized(); 
 
         const verifyToken = await jwt.verify(bearerToken, jwt_secret_key, (err, result) => {
-            if(err) throw createHttpError.Unauthorized(); 
+            if(err?.name==="JsonWebTokenError") {
+                throw new createHttpError.Unauthorized(); 
+            } else {
+                throw new createHttpError.Unauthorized(err.message); 
+            }
             req.payload = result; 
             next(); 
         })
